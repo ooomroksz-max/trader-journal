@@ -411,7 +411,6 @@ function MarketObsSection() {
   return (
     <div>
       {lightbox&&<div className="lightbox" onClick={()=>setLightbox(null)}><img src={lightbox} alt=""/></div>}
-    <div>
       {view==="list"&&<>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <span style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1.5}}>👁️ Piyasa Gözlemleri</span>
