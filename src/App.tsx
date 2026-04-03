@@ -15,7 +15,8 @@ const PAIRS = ["EURUSD","GBPUSD","XAUUSD","BTCUSDT","NASDAQ","SP500","Diğer"];
 interface Trade { id:string;date:string;pair:string;direction:string;session:string;timeframe:string;entryPrice:string;stopLoss:string;takeProfit:string;outcome:string;pnl:string;ewWave:string;ictConcepts:string[];confluences:string;lessons:string;images:string[]; }
 interface DiaryEntry { id:string;date:string;title:string;content:string;mood:string; }
 interface StrategyNote { id:string;title:string;content:string;tags:string[];updatedAt:string; }
-interface MarketObs { id:string;date:string;pair:string;timeframe:string;bias:string;notes:string;keyLevels:string; }
+interface MarketObs { id:string;date:string;pair:string;timeframe:string;bias:string;notes:string;keyLevels:string;images:string[]; }
+interface LessonNote { id:string;title:string;content:string;category:string;tags:string[];images:string[];updatedAt:string; }
 
 const EMPTY_TRADE: Omit<Trade,"id"> = { date:new Date().toISOString().slice(0,10),pair:"",direction:"",session:"",timeframe:"",entryPrice:"",stopLoss:"",takeProfit:"",outcome:"",pnl:"",ewWave:"",ictConcepts:[],confluences:"",lessons:"",images:[] };
 
@@ -401,12 +402,15 @@ function MarketObsSection() {
   const [obs,setObs]=useState<MarketObs[]>([]);
   const [loading,setLoading]=useState(true);
   const [view,setView]=useState<"list"|"add"|"detail">("list");
-  const [form,setForm]=useState({date:new Date().toISOString().slice(0,10),pair:"",timeframe:"",bias:"",notes:"",keyLevels:""});
+  const [form,setForm]=useState({date:new Date().toISOString().slice(0,10),pair:"",timeframe:"",bias:"",notes:"",keyLevels:"",images:[] as string[]});
   const [selected,setSelected]=useState<MarketObs|null>(null);
+  const [lightbox,setLightbox]=useState<string|null>(null);
   const BIASES=["Bullish","Bearish","Nötr","Belirsiz"];
   const bC:Record<string,string>={"Bullish":"#48bb78","Bearish":"#fc8181","Nötr":"#ecc94b","Belirsiz":"#718096"};
   useEffect(()=>{ dbFetch("market_obs").then(data=>{ setObs(data); setLoading(false); }).catch(()=>setLoading(false)); },[]);
   return (
+    <div>
+      {lightbox&&<div className="lightbox" onClick={()=>setLightbox(null)}><img src={lightbox} alt=""/></div>}
     <div>
       {view==="list"&&<>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -438,8 +442,22 @@ function MarketObsSection() {
           <div><label>Bias</label><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{BIASES.map(b=><button key={b} className="btn" onClick={()=>setForm({...form,bias:b})} style={{padding:"6px 14px",background:form.bias===b?bC[b]+"22":"transparent",border:`1px solid ${form.bias===b?bC[b]:"#1e2535"}`,color:form.bias===b?bC[b]:"#4a5568"}}>{b}</button>)}</div></div>
           <div><label>Önemli Seviyeler</label><textarea rows={3} placeholder="1.0850 → Bullish OB" value={form.keyLevels} onChange={e=>setForm({...form,keyLevels:e.target.value})}/></div>
           <div><label>Gözlem Notları</label><textarea rows={5} placeholder="Piyasa ne söylüyor?" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></div>
+          <div>
+            <label>Grafik Görselleri</label>
+            <div style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"flex-start"}}>
+              {(form.images||[]).map((img:string,i:number)=>(
+                <div key={i} style={{position:"relative"}}>
+                  <img src={img} alt="" style={{width:120,height:80,objectFit:"cover",borderRadius:6,border:"1px solid #1e2535"}}/>
+                  <button onClick={()=>setForm({...form,images:(form.images||[]).filter((_:string,j:number)=>j!==i)})} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#fc8181",border:"none",color:"#fff",fontSize:10,cursor:"pointer"}}>×</button>
+                </div>
+              ))}
+              <button className="btn" onClick={()=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.multiple=true; inp.onchange=(e:any)=>{ Array.from(e.target.files||[]).forEach((file:any)=>{ const r=new FileReader(); r.onload=ev=>setForm((p:any)=>({...p,images:[...(p.images||[]),ev.target?.result as string]})); r.readAsDataURL(file); }); }; inp.click(); }} style={{width:120,height:80,background:"#0f1117",border:"1px dashed #2d3748",color:"#4a5568",fontSize:12,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,borderRadius:6}}>
+                <span style={{fontSize:20}}>+</span><span>Görsel Ekle</span>
+              </button>
+            </div>
+          </div>
           <div style={{display:"flex",gap:10}}>
-            <button className="btn" onClick={async()=>{if(!form.pair)return;const o={...form,id:Date.now().toString()};await dbUpsert("market_obs",o.id,o);setObs(prev=>[o,...prev]);setForm({date:new Date().toISOString().slice(0,10),pair:"",timeframe:"",bias:"",notes:"",keyLevels:""});setView("list");}} style={{background:"#3182ce",color:"#fff",padding:"10px",flex:1,borderRadius:8}}>Kaydet</button>
+            <button className="btn" onClick={async()=>{if(!form.pair)return;const o={...form,images:form.images||[],id:Date.now().toString()};await dbUpsert("market_obs",o.id,o);setObs(prev=>[o,...prev]);setForm({date:new Date().toISOString().slice(0,10),pair:"",timeframe:"",bias:"",notes:"",keyLevels:"",images:[]});setView("list");}} style={{background:"#3182ce",color:"#fff",padding:"10px",flex:1,borderRadius:8}}>Kaydet</button>
             <button className="btn" onClick={()=>setView("list")} style={{background:"#1e2535",color:"#a0aec0",padding:"10px 18px",borderRadius:8}}>İptal</button>
           </div>
         </div>
@@ -456,7 +474,110 @@ function MarketObsSection() {
           <span style={{color:"#4a5568",fontSize:12}}>{selected.date}</span>
         </div>
         {selected.keyLevels&&<div style={{marginBottom:16}}><label>Önemli Seviyeler</label><div style={{background:"#0f1117",border:"1px solid #1e2535",borderLeft:"2px solid #63b3ed",borderRadius:8,padding:14,fontSize:13,lineHeight:1.8,color:"#a0aec0",whiteSpace:"pre-wrap"}}>{selected.keyLevels}</div></div>}
-        {selected.notes&&<div><label>Gözlem Notları</label><div style={{background:"#0f1117",border:"1px solid #1e2535",borderRadius:8,padding:14,fontSize:14,lineHeight:1.8,color:"#a0aec0",whiteSpace:"pre-wrap"}}>{selected.notes}</div></div>}
+        {selected.notes&&<div style={{marginBottom:16}}><label>Gözlem Notları</label><div style={{background:"#0f1117",border:"1px solid #1e2535",borderRadius:8,padding:14,fontSize:14,lineHeight:1.8,color:"#a0aec0",whiteSpace:"pre-wrap"}}>{selected.notes}</div></div>}
+        {selected.images&&selected.images.length>0&&<div><label>Grafikler ({selected.images.length})</label><div style={{display:"flex",flexWrap:"wrap",gap:8}}>{selected.images.map((img:string,i:number)=><img key={i} src={img} className="img-thumb" onClick={()=>setLightbox(img)} alt="" style={{width:160,height:100}}/>)}</div></div>}
+      </>}
+    </div>
+  );
+}
+
+// ─── Lesson Notes ─────────────────────────────────────────────────────────────
+function LessonNotesSection() {
+  const [notes,setNotes]=useState<LessonNote[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [view,setView]=useState<"list"|"add"|"detail">("list");
+  const [search,setSearch]=useState("");
+  const [filterCat,setFilterCat]=useState("Tümü");
+  const [lightbox,setLightbox]=useState<string|null>(null);
+  const [form,setForm]=useState({title:"",content:"",category:"Elliott Wave",tags:[] as string[],images:[] as string[],tagInput:""});
+  const [selected,setSelected]=useState<LessonNote|null>(null);
+  const CATS=["Elliott Wave","ICT","Risk Yönetimi","Psikoloji","Strateji","Diğer"];
+
+  useEffect(()=>{ dbFetch("lessons").then(data=>{ setNotes(data); setLoading(false); }).catch(()=>setLoading(false)); },[]);
+
+  function addTag(e:React.KeyboardEvent<HTMLInputElement>){ if(e.key==="Enter"&&form.tagInput.trim()){ setForm({...form,tags:[...form.tags,form.tagInput.trim()],tagInput:""}); } }
+
+  const filtered=notes.filter(n=>{
+    const matchCat=filterCat==="Tümü"||n.category===filterCat;
+    const matchSearch=!search||n.title.toLowerCase().includes(search.toLowerCase())||n.content.toLowerCase().includes(search.toLowerCase());
+    return matchCat&&matchSearch;
+  });
+
+  return (
+    <div>
+      {lightbox&&<div className="lightbox" onClick={()=>setLightbox(null)}><img src={lightbox} alt=""/></div>}
+
+      {view==="list"&&<>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <span style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1.5}}>📚 Ders Defteri</span>
+          <button className="btn" onClick={()=>setView("add")} style={{background:"#3182ce",color:"#fff",padding:"6px 14px",fontSize:12}}>+ Yeni Not</button>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
+          <input placeholder="🔍 Ara..." value={search} onChange={e=>setSearch(e.target.value)} style={{maxWidth:200}}/>
+          {["Tümü",...CATS].map(c=><button key={c} className="btn" onClick={()=>setFilterCat(c)} style={{padding:"4px 10px",fontSize:11,background:filterCat===c?"#1e2535":"transparent",border:`1px solid ${filterCat===c?"#3182ce":"#1e2535"}`,color:filterCat===c?"#63b3ed":"#4a5568"}}>{c}</button>)}
+        </div>
+        {loading?<Spinner/>:filtered.length===0?<div style={{color:"#2d3748",textAlign:"center",padding:"40px 0",fontSize:13}}>Henüz ders notu yok</div>:(
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {filtered.map(n=>(
+              <div key={n.id} onClick={()=>{setSelected(n);setView("detail");}} style={{background:"#0a0d14",border:"1px solid #1e2535",borderRadius:8,padding:14,cursor:"pointer",display:"flex",gap:12}}>
+                {n.images&&n.images.length>0&&<img src={n.images[0]} alt="" style={{width:56,height:40,objectFit:"cover",borderRadius:4,border:"1px solid #1e2535",flexShrink:0}}/>}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+                    <span style={{fontWeight:600,fontSize:14}}>{n.title}</span>
+                    <Tag label={n.category} color="#f6ad55"/>
+                  </div>
+                  <div style={{color:"#4a5568",fontSize:12,marginTop:4}}>{n.content.slice(0,80)}{n.content.length>80?"...":""}</div>
+                  {n.tags.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:6}}>{n.tags.map((t:string)=><Tag key={t} label={t} color="#b794f4"/>)}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </>}
+
+      {view==="add"&&<>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}><span style={{color:"#f6ad55",fontSize:11,textTransform:"uppercase",letterSpacing:1.5}}>📚 Yeni Ders Notu</span><button className="btn" onClick={()=>setView("list")} style={{background:"#1e2535",color:"#a0aec0",padding:"5px 12px",fontSize:12}}>← Geri</button></div>
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div><label>Başlık</label><input placeholder="Elliott Wave Temel Kuralları..." value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></div>
+          <div><label>Kategori</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{CATS.map(c=><button key={c} className="btn" onClick={()=>setForm({...form,category:c})} style={{padding:"5px 12px",fontSize:11,background:form.category===c?"#f6ad5522":"transparent",border:`1px solid ${form.category===c?"#f6ad55":"#1e2535"}`,color:form.category===c?"#f6ad55":"#4a5568"}}>{c}</button>)}</div></div>
+          <div><label>İçerik</label><textarea rows={12} placeholder="Notlarını buraya yaz..." value={form.content} onChange={e=>setForm({...form,content:e.target.value})}/></div>
+          <div><label>Etiket (Enter ile ekle)</label><input placeholder="impuls, dalga, fibonacci..." value={form.tagInput} onChange={e=>setForm({...form,tagInput:e.target.value})} onKeyDown={addTag}/>{form.tags.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:8}}>{form.tags.map((t:string)=><span key={t} style={{background:"#b794f422",border:"1px solid #b794f455",color:"#b794f4",borderRadius:4,padding:"2px 8px",fontSize:11,cursor:"pointer"}} onClick={()=>setForm({...form,tags:form.tags.filter((x:string)=>x!==t)})}>{t} ×</span>)}</div>}</div>
+          <div>
+            <label>Görseller (diyagram, grafik vb.)</label>
+            <div style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"flex-start"}}>
+              {form.images.map((img:string,i:number)=>(
+                <div key={i} style={{position:"relative"}}>
+                  <img src={img} alt="" style={{width:120,height:80,objectFit:"cover",borderRadius:6,border:"1px solid #1e2535"}}/>
+                  <button onClick={()=>setForm({...form,images:form.images.filter((_:string,j:number)=>j!==i)})} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#fc8181",border:"none",color:"#fff",fontSize:10,cursor:"pointer"}}>×</button>
+                </div>
+              ))}
+              <button className="btn" onClick={()=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.multiple=true; inp.onchange=(e:any)=>{ Array.from(e.target.files||[]).forEach((file:any)=>{ const r=new FileReader(); r.onload=ev=>setForm((p:any)=>({...p,images:[...p.images,ev.target?.result as string]})); r.readAsDataURL(file); }); }; inp.click(); }} style={{width:120,height:80,background:"#0f1117",border:"1px dashed #2d3748",color:"#4a5568",fontSize:12,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,borderRadius:6}}>
+                <span style={{fontSize:20}}>+</span><span>Görsel Ekle</span>
+              </button>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:10}}>
+            <button className="btn" onClick={async()=>{ if(!form.title)return; const n:LessonNote={title:form.title,content:form.content,category:form.category,tags:form.tags,images:form.images,id:Date.now().toString(),updatedAt:new Date().toISOString().slice(0,10)}; await dbUpsert("lessons",n.id,n); setNotes(prev=>[n,...prev]); setForm({title:"",content:"",category:"Elliott Wave",tags:[],images:[],tagInput:""}); setView("list"); }} style={{background:"#3182ce",color:"#fff",padding:"10px",flex:1,borderRadius:8}}>Kaydet</button>
+            <button className="btn" onClick={()=>setView("list")} style={{background:"#1e2535",color:"#a0aec0",padding:"10px 18px",borderRadius:8}}>İptal</button>
+          </div>
+        </div>
+      </>}
+
+      {view==="detail"&&selected&&<>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}>
+          <button className="btn" onClick={()=>setView("list")} style={{background:"#1e2535",color:"#a0aec0",padding:"5px 12px",fontSize:12}}>← Geri</button>
+          <button className="btn" onClick={async()=>{ await dbDelete("lessons",selected.id); setNotes(prev=>prev.filter(n=>n.id!==selected.id)); setView("list"); }} style={{background:"transparent",border:"1px solid #fc818133",color:"#fc8181",padding:"5px 12px",fontSize:12}}>Sil</button>
+        </div>
+        <div style={{marginBottom:12}}>
+          <div style={{fontWeight:700,fontSize:22,marginBottom:6}}>{selected.title}</div>
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+            <Tag label={selected.category} color="#f6ad55"/>
+            <span style={{color:"#4a5568",fontSize:12}}>{selected.updatedAt}</span>
+            {selected.tags.map((t:string)=><Tag key={t} label={t} color="#b794f4"/>)}
+          </div>
+        </div>
+        <div style={{background:"#0f1117",border:"1px solid #1e2535",borderRadius:8,padding:16,fontSize:14,lineHeight:1.9,color:"#c4b5fd",whiteSpace:"pre-wrap",marginBottom:16}}>{selected.content}</div>
+        {selected.images&&selected.images.length>0&&<div><label>Görseller ({selected.images.length})</label><div style={{display:"flex",flexWrap:"wrap",gap:8}}>{selected.images.map((img:string,i:number)=><img key={i} src={img} className="img-thumb" onClick={()=>setLightbox(img)} alt="" style={{width:200,height:130}}/>)}</div></div>}
       </>}
     </div>
   );
@@ -819,8 +940,8 @@ function ScanSection() {
   );
 }
 export default function App() {
-  const [tab,setTab]=useState<"journal"|"diary"|"strategy"|"market"|"stats"|"scan">("journal");
-  const tabs=[{id:"journal",label:"📈 Trade"},{id:"diary",label:"📒 Günlük"},{id:"strategy",label:"🧠 Strateji"},{id:"market",label:"👁️ Piyasa"},{id:"stats",label:"📊 İstatistik"},{id:"scan",label:"📡 Tarama"}];
+  const [tab,setTab]=useState<"journal"|"diary"|"strategy"|"market"|"stats"|"scan"|"lessons">("journal");
+  const tabs=[{id:"journal",label:"📈 Trade"},{id:"diary",label:"📒 Günlük"},{id:"lessons",label:"📚 Ders Defteri"},{id:"strategy",label:"🧠 Strateji"},{id:"market",label:"👁️ Piyasa"},{id:"stats",label:"📊 İstatistik"},{id:"scan",label:"📡 Tarama"}];
   return (
     <div style={{minHeight:"100vh",background:"#080b10",color:"#e2e8f0",fontFamily:"'IBM Plex Mono','Courier New',monospace"}}>
       <style>{`
@@ -853,6 +974,7 @@ export default function App() {
       <div style={{maxWidth:960,margin:"0 auto",padding:"24px 16px"}}>
         {tab==="journal"&&<TradeJournalSection/>}
         {tab==="diary"&&<DiarySection/>}
+        {tab==="lessons"&&<LessonNotesSection/>}
         {tab==="strategy"&&<StrategySection/>}
         {tab==="market"&&<MarketObsSection/>}
         {tab==="stats"&&<StatsSection/>}
