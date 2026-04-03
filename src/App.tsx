@@ -167,7 +167,7 @@ function TradeJournalSection() {
           </div>
           <button className="btn" onClick={()=>{setForm(EMPTY_TRADE);setView("add");}} style={{background:"#3182ce",color:"#fff",padding:"7px 16px",fontSize:12}}>+ Yeni Trade</button>
         </div>
-        {loading?<Spinner>():filtered.length===0?<div style={{color:"#2d3748",textAlign:"center",padding:"40px 0",fontSize:13}}>Henüz trade yok</div>:(
+        {loading?<Spinner/>:filtered.length===0?<div style={{color:"#2d3748",textAlign:"center",padding:"40px 0",fontSize:13}}>Henüz trade yok</div>:(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {filtered.map(t=>(
               <Card key={t.id} onClick={()=>{setSelected(t);setView("detail");}} style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",cursor:"pointer"}}>
