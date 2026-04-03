@@ -729,10 +729,98 @@ function StatsSection() {
   );
 }
 
-// ─── Main App ─────────────────────────────────────────────────────────────────
+// ─── Scan Section ─────────────────────────────────────────────────────────────
+function ScanSection() {
+  const [scanning, setScanning] = useState(false);
+  const [result, setResult] = useState<{timestamp:string;analysis:string}|null>(null);
+  const [autoScan, setAutoScan] = useState(false);
+  const [lastScan, setLastScan] = useState("");
+  const intervalRef = useRef<any>(null);
+
+  async function doScan() {
+    setScanning(true);
+    try {
+      const res = await fetch('/api/scan');
+      const data = await res.json();
+      setResult(data);
+      setLastScan(new Date().toLocaleTimeString('tr-TR'));
+      // Bildirim gönder
+      if('Notification' in window && Notification.permission === 'granted') {
+        if(data.analysis?.includes('⚡ Dikkat: Evet') || data.analysis?.includes('setup var')) {
+          new Notification('EW·ICT Platform 🎯', { body: 'Uygun setup tespit edildi! Hemen kontrol et.', icon: '/icon-192.png' });
+        }
+      }
+    } catch(e) {
+      setResult({timestamp: new Date().toISOString(), analysis: '❌ Tarama hatası. Tekrar dene.'});
+    }
+    setScanning(false);
+  }
+
+  function toggleAutoScan() {
+    if(autoScan) {
+      clearInterval(intervalRef.current);
+      setAutoScan(false);
+    } else {
+      setAutoScan(true);
+      doScan();
+      intervalRef.current = setInterval(doScan, 30 * 60 * 1000); // 30 dk
+      if('Notification' in window) Notification.requestPermission();
+    }
+  }
+
+  useEffect(() => () => clearInterval(intervalRef.current), []);
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      <div style={{color:'#718096',fontSize:11,textTransform:'uppercase',letterSpacing:1.5}}>📡 Piyasa Tarama</div>
+
+      {/* Kontroller */}
+      <div style={{background:'#0a0d14',border:'1px solid #1e2535',borderRadius:8,padding:16}}>
+        <div style={{fontSize:13,color:'#a0aec0',marginBottom:12}}>
+          EURUSD, XAUUSD ve BTCUSDT için otomatik EW + ICT setup taraması yapar. Uygun setup bulunca bildirim gönderir.
+        </div>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+          <button className="btn" onClick={doScan} disabled={scanning} style={{background:'#3182ce',color:'#fff',padding:'9px 20px',fontSize:13}}>
+            {scanning ? '🔄 Taranıyor...' : '🔍 Şimdi Tara'}
+          </button>
+          <button className="btn" onClick={toggleAutoScan} style={{background:autoScan?'#48bb7822':'#1e2535',border:`1px solid ${autoScan?'#48bb78':'#2d3748'}`,color:autoScan?'#48bb78':'#a0aec0',padding:'9px 20px',fontSize:13}}>
+            {autoScan ? '⏹ Otomatik Taramayı Durdur' : '▶ Otomatik Tara (30dk)'}
+          </button>
+        </div>
+        {lastScan && <div style={{color:'#4a5568',fontSize:11,marginTop:10}}>Son tarama: {lastScan}</div>}
+      </div>
+
+      {/* Sonuç */}
+      {scanning && (
+        <div style={{background:'#0a0d14',border:'1px solid #1e2535',borderRadius:8,padding:24,textAlign:'center'}}>
+          <div style={{display:'inline-block',width:24,height:24,border:'2px solid #1e2535',borderTop:'2px solid #3182ce',borderRadius:'50%',animation:'spin 0.8s linear infinite'}}/>
+          <div style={{color:'#4a5568',fontSize:13,marginTop:12}}>Piyasalar analiz ediliyor...</div>
+        </div>
+      )}
+
+      {result && !scanning && (
+        <div style={{background:'#0a0d14',border:'1px solid #1e2535',borderRadius:8,padding:16}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <span style={{color:'#718096',fontSize:11,textTransform:'uppercase',letterSpacing:1}}>AI Analiz Raporu</span>
+            <span style={{color:'#4a5568',fontSize:11}}>{new Date(result.timestamp).toLocaleString('tr-TR')}</span>
+          </div>
+          <div style={{fontSize:13,lineHeight:1.9,color:'#c4b5fd',whiteSpace:'pre-wrap'}}>{result.analysis}</div>
+        </div>
+      )}
+
+      {/* Bildirim */}
+      <div style={{background:'#0a0d14',border:'1px solid #1e2535',borderRadius:8,padding:14,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10}}>
+        <span style={{color:'#718096',fontSize:12}}>🔔 Setup bulununca bildirim al</span>
+        <button className="btn" onClick={()=>{ if('Notification' in window) Notification.requestPermission().then(p=>{ if(p==='granted') new Notification('EW·ICT ✅',{body:'Bildirimler aktif!',icon:'/icon-192.png'}); }); }} style={{background:'#1e2535',border:'1px solid #3182ce55',color:'#63b3ed',padding:'6px 14px',fontSize:12}}>
+          Bildirimleri Aç
+        </button>
+      </div>
+    </div>
+  );
+}
 export default function App() {
-  const [tab,setTab]=useState<"journal"|"diary"|"strategy"|"market"|"stats">("journal");
-  const tabs=[{id:"journal",label:"📈 Trade"},{id:"diary",label:"📒 Günlük"},{id:"strategy",label:"🧠 Strateji"},{id:"market",label:"👁️ Piyasa"},{id:"stats",label:"📊 İstatistik"}];
+  const [tab,setTab]=useState<"journal"|"diary"|"strategy"|"market"|"stats"|"scan">("journal");
+  const tabs=[{id:"journal",label:"📈 Trade"},{id:"diary",label:"📒 Günlük"},{id:"strategy",label:"🧠 Strateji"},{id:"market",label:"👁️ Piyasa"},{id:"stats",label:"📊 İstatistik"},{id:"scan",label:"📡 Tarama"}];
   return (
     <div style={{minHeight:"100vh",background:"#080b10",color:"#e2e8f0",fontFamily:"'IBM Plex Mono','Courier New',monospace"}}>
       <style>{`
@@ -768,6 +856,7 @@ export default function App() {
         {tab==="strategy"&&<StrategySection/>}
         {tab==="market"&&<MarketObsSection/>}
         {tab==="stats"&&<StatsSection/>}
+        {tab==="scan"&&<ScanSection/>}
       </div>
     </div>
   );
