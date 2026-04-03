@@ -462,10 +462,277 @@ function MarketObsSection() {
   );
 }
 
+// ─── Stats Section ────────────────────────────────────────────────────────────
+function StatsSection() {
+  const [trades,setTrades]=useState<Trade[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [period,setPeriod]=useState<"weekly"|"monthly">("monthly");
+
+  useEffect(()=>{
+    dbFetch("trades").then(data=>{ setTrades(data); setLoading(false); }).catch(()=>setLoading(false));
+    // Bildirim izni iste
+    if("Notification" in window && Notification.permission==="default") {
+      Notification.requestPermission();
+    }
+    // Günlük hatırlatıcı kontrolü
+    const lastEntry = localStorage.getItem("ew_last_trade_date");
+    const today = new Date().toISOString().slice(0,10);
+    if(lastEntry!==today && "Notification" in window && Notification.permission==="granted") {
+      setTimeout(()=>{
+        new Notification("EW·ICT Platform 📊", { body:"Bugün trade günlüğünü doldurmadın! Eksik kayıt kalmasın.", icon:"/icon-192.png" });
+      }, 3000);
+    }
+  },[]);
+
+  if(loading) return <Spinner/>;
+  if(trades.length===0) return <div style={{color:"#2d3748",textAlign:"center",padding:"60px 0",fontSize:13}}>Henüz trade yok — istatistikler için trade girmeye başla 📈</div>;
+
+  // ── Hesaplamalar ──
+  const wins=trades.filter(t=>t.outcome==="Kâr");
+  const losses=trades.filter(t=>t.outcome==="Zarar");
+  const wr=Math.round((wins.length/(wins.length+losses.length||1))*100);
+  const totalPnl=trades.reduce((s,t)=>s+(parseFloat(t.pnl)||0),0);
+
+  // Seans analizi
+  const sessionStats: Record<string,{wins:number;losses:number;pnl:number}> = {};
+  trades.forEach(t=>{
+    if(!t.session) return;
+    if(!sessionStats[t.session]) sessionStats[t.session]={wins:0,losses:0,pnl:0};
+    if(t.outcome==="Kâr") sessionStats[t.session].wins++;
+    if(t.outcome==="Zarar") sessionStats[t.session].losses++;
+    sessionStats[t.session].pnl+=parseFloat(t.pnl)||0;
+  });
+  const bestSession=Object.entries(sessionStats).sort((a,b)=>b[1].pnl-a[1].pnl)[0];
+
+  // Parite analizi
+  const pairStats: Record<string,{wins:number;losses:number;pnl:number;total:number}> = {};
+  trades.forEach(t=>{
+    if(!t.pair) return;
+    if(!pairStats[t.pair]) pairStats[t.pair]={wins:0,losses:0,pnl:0,total:0};
+    if(t.outcome==="Kâr") pairStats[t.pair].wins++;
+    if(t.outcome==="Zarar") pairStats[t.pair].losses++;
+    pairStats[t.pair].pnl+=parseFloat(t.pnl)||0;
+    pairStats[t.pair].total++;
+  });
+  const topPairs=Object.entries(pairStats).sort((a,b)=>b[1].pnl-a[1].pnl).slice(0,5);
+
+  // Timeframe analizi
+  const tfStats: Record<string,{wins:number;total:number;pnl:number}> = {};
+  trades.forEach(t=>{
+    if(!t.timeframe) return;
+    if(!tfStats[t.timeframe]) tfStats[t.timeframe]={wins:0,total:0,pnl:0};
+    if(t.outcome==="Kâr") tfStats[t.timeframe].wins++;
+    tfStats[t.timeframe].total++;
+    tfStats[t.timeframe].pnl+=parseFloat(t.pnl)||0;
+  });
+
+  // ICT konsept analizi
+  const ictStats: Record<string,{total:number;wins:number}> = {};
+  trades.forEach(t=>{
+    t.ictConcepts.forEach((c:string)=>{
+      if(!ictStats[c]) ictStats[c]={total:0,wins:0};
+      ictStats[c].total++;
+      if(t.outcome==="Kâr") ictStats[c].wins++;
+    });
+  });
+  const topICT=Object.entries(ictStats).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
+
+  // EW dalga analizi
+  const ewStats: Record<string,{total:number;wins:number}> = {};
+  trades.forEach(t=>{
+    if(!t.ewWave) return;
+    if(!ewStats[t.ewWave]) ewStats[t.ewWave]={total:0,wins:0};
+    ewStats[t.ewWave].total++;
+    if(t.outcome==="Kâr") ewStats[t.ewWave].wins++;
+  });
+
+  // Periyot bazlı P&L
+  const now=new Date();
+  const periodTrades=trades.filter(t=>{
+    const d=new Date(t.date);
+    if(period==="weekly") { const weekAgo=new Date(now); weekAgo.setDate(now.getDate()-7); return d>=weekAgo; }
+    else { const monthAgo=new Date(now); monthAgo.setMonth(now.getMonth()-1); return d>=monthAgo; }
+  });
+
+  // Günlük P&L için gruplama
+  const dailyPnl: Record<string,number> = {};
+  periodTrades.forEach(t=>{ if(t.pnl) { dailyPnl[t.date]=(dailyPnl[t.date]||0)+(parseFloat(t.pnl)||0); } });
+  const dailyEntries=Object.entries(dailyPnl).sort((a,b)=>a[0].localeCompare(b[0]));
+
+  // Bar chart max değer
+  const maxPnl=Math.max(...dailyEntries.map(([,v])=>Math.abs(v)),1);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:24}}>
+
+      {/* Genel Özet */}
+      <div>
+        <div style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>📊 Genel Özet</div>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+          <StatCard label="Toplam" value={trades.length}/>
+          <StatCard label="Win Rate" value={`${wr}%`} color={wr>=50?"#48bb78":"#fc8181"}/>
+          <StatCard label="Net P&L" value={totalPnl>=0?`+${totalPnl.toFixed(1)}R`:`${totalPnl.toFixed(1)}R`} color={totalPnl>=0?"#48bb78":"#fc8181"}/>
+          <StatCard label="Ort. Kazanç" value={wins.length>0?`+${(wins.reduce((s,t)=>s+(parseFloat(t.pnl)||0),0)/wins.length).toFixed(1)}R`:"—"} color="#48bb78"/>
+          <StatCard label="Ort. Kayıp" value={losses.length>0?`${(losses.reduce((s,t)=>s+(parseFloat(t.pnl)||0),0)/losses.length).toFixed(1)}R`:"—"} color="#fc8181"/>
+        </div>
+      </div>
+
+      {/* P&L Grafiği */}
+      <div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1.5}}>📈 P&L Grafiği</div>
+          <div style={{display:"flex",gap:6}}>
+            <button className="btn" onClick={()=>setPeriod("weekly")} style={{padding:"4px 12px",fontSize:11,background:period==="weekly"?"#1e2535":"transparent",border:`1px solid ${period==="weekly"?"#3182ce":"#1e2535"}`,color:period==="weekly"?"#63b3ed":"#4a5568"}}>Haftalık</button>
+            <button className="btn" onClick={()=>setPeriod("monthly")} style={{padding:"4px 12px",fontSize:11,background:period==="monthly"?"#1e2535":"transparent",border:`1px solid ${period==="monthly"?"#3182ce":"#1e2535"}`,color:period==="monthly"?"#63b3ed":"#4a5568"}}>Aylık</button>
+          </div>
+        </div>
+        {dailyEntries.length===0?(
+          <div style={{background:"#0a0d14",border:"1px solid #1e2535",borderRadius:8,padding:"30px",textAlign:"center",color:"#2d3748",fontSize:13}}>Bu dönemde trade yok</div>
+        ):(
+          <div style={{background:"#0a0d14",border:"1px solid #1e2535",borderRadius:8,padding:16}}>
+            <div style={{display:"flex",alignItems:"flex-end",gap:4,height:120,overflowX:"auto",paddingBottom:8}}>
+              {dailyEntries.map(([date,pnl])=>{
+                const h=Math.max(4,Math.round(Math.abs(pnl)/maxPnl*100));
+                const color=pnl>=0?"#48bb78":"#fc8181";
+                return (
+                  <div key={date} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,minWidth:32,flex:1}}>
+                    <div style={{fontSize:9,color:"#4a5568"}}>{pnl>=0?"+":""}{pnl.toFixed(1)}</div>
+                    <div style={{width:"100%",height:h,background:color,borderRadius:"3px 3px 0 0",opacity:0.85,minHeight:4}}/>
+                    <div style={{fontSize:8,color:"#4a5568",transform:"rotate(-45deg)",whiteSpace:"nowrap"}}>{date.slice(5)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Seans & Parite */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+        {/* Seans Analizi */}
+        <div>
+          <div style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>⏰ Seans Analizi</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {Object.entries(sessionStats).sort((a,b)=>b[1].pnl-a[1].pnl).map(([session,s])=>{
+              const sWr=Math.round((s.wins/(s.wins+s.losses||1))*100);
+              return (
+                <div key={session} style={{background:"#0a0d14",border:`1px solid ${bestSession&&bestSession[0]===session?"#48bb7855":"#1e2535"}`,borderRadius:6,padding:"10px 12px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{fontSize:13,fontWeight:600}}>{session}{bestSession&&bestSession[0]===session?" 🏆":""}</span>
+                    <span style={{color:s.pnl>=0?"#48bb78":"#fc8181",fontFamily:"monospace",fontSize:12}}>{s.pnl>=0?"+":""}{s.pnl.toFixed(1)}R</span>
+                  </div>
+                  <div style={{display:"flex",gap:8,marginTop:4}}>
+                    <span style={{color:"#4a5568",fontSize:11}}>WR: {sWr}%</span>
+                    <span style={{color:"#48bb78",fontSize:11}}>✓{s.wins}</span>
+                    <span style={{color:"#fc8181",fontSize:11}}>✗{s.losses}</span>
+                  </div>
+                </div>
+              );
+            })}
+            {Object.keys(sessionStats).length===0&&<div style={{color:"#2d3748",fontSize:13}}>Veri yok</div>}
+          </div>
+        </div>
+
+        {/* Parite Analizi */}
+        <div>
+          <div style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>💱 En Kârlı Pariteler</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {topPairs.map(([pair,s],i)=>(
+              <div key={pair} style={{background:"#0a0d14",border:"1px solid #1e2535",borderRadius:6,padding:"10px 12px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{fontSize:13,fontWeight:600}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":"  "} {pair}</span>
+                  <span style={{color:s.pnl>=0?"#48bb78":"#fc8181",fontFamily:"monospace",fontSize:12}}>{s.pnl>=0?"+":""}{s.pnl.toFixed(1)}R</span>
+                </div>
+                <div style={{display:"flex",gap:8,marginTop:4}}>
+                  <span style={{color:"#4a5568",fontSize:11}}>{s.total} trade</span>
+                  <span style={{color:"#4a5568",fontSize:11}}>WR: {Math.round((s.wins/(s.wins+s.losses||1))*100)}%</span>
+                </div>
+              </div>
+            ))}
+            {topPairs.length===0&&<div style={{color:"#2d3748",fontSize:13}}>Veri yok</div>}
+          </div>
+        </div>
+      </div>
+
+      {/* Timeframe Analizi */}
+      <div>
+        <div style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>⏱️ Timeframe Performansı</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {Object.entries(tfStats).sort((a,b)=>b[1].pnl-a[1].pnl).map(([tf,s])=>(
+            <div key={tf} style={{background:"#0a0d14",border:"1px solid #1e2535",borderRadius:8,padding:"12px 16px",minWidth:80,textAlign:"center"}}>
+              <div style={{fontWeight:700,fontSize:16,color:"#e2e8f0"}}>{tf}</div>
+              <div style={{color:s.pnl>=0?"#48bb78":"#fc8181",fontFamily:"monospace",fontSize:12,marginTop:4}}>{s.pnl>=0?"+":""}{s.pnl.toFixed(1)}R</div>
+              <div style={{color:"#4a5568",fontSize:11,marginTop:2}}>WR: {Math.round((s.wins/s.total)*100)}%</div>
+            </div>
+          ))}
+          {Object.keys(tfStats).length===0&&<div style={{color:"#2d3748",fontSize:13}}>Veri yok</div>}
+        </div>
+      </div>
+
+      {/* ICT Konsept Analizi */}
+      <div>
+        <div style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>🧠 ICT Konsept İstatistikleri</div>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {topICT.map(([concept,s])=>{
+            const cWr=Math.round((s.wins/s.total)*100);
+            const barW=Math.round((s.total/Math.max(...topICT.map(([,x])=>x.total)))*100);
+            return (
+              <div key={concept} style={{background:"#0a0d14",border:"1px solid #1e2535",borderRadius:6,padding:"10px 12px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                  <span style={{fontSize:13}}>{concept}</span>
+                  <div style={{display:"flex",gap:10}}>
+                    <span style={{color:"#4a5568",fontSize:11}}>{s.total}x kullanım</span>
+                    <span style={{color:cWr>=50?"#48bb78":"#fc8181",fontSize:11}}>WR: {cWr}%</span>
+                  </div>
+                </div>
+                <div style={{height:4,background:"#1e2535",borderRadius:2}}>
+                  <div style={{height:"100%",width:`${barW}%`,background:"#3182ce",borderRadius:2}}/>
+                </div>
+              </div>
+            );
+          })}
+          {topICT.length===0&&<div style={{color:"#2d3748",fontSize:13}}>Veri yok</div>}
+        </div>
+      </div>
+
+      {/* EW Dalga Analizi */}
+      <div>
+        <div style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>🌊 Elliott Wave İstatistikleri</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {Object.entries(ewStats).sort((a,b)=>b[1].total-a[1].total).map(([wave,s])=>(
+            <div key={wave} style={{background:"#0a0d14",border:"1px solid #b794f433",borderRadius:8,padding:"10px 14px",minWidth:90,textAlign:"center"}}>
+              <div style={{fontWeight:700,fontSize:13,color:"#b794f4"}}>{wave}</div>
+              <div style={{color:"#4a5568",fontSize:11,marginTop:4}}>{s.total} trade</div>
+              <div style={{color:Math.round((s.wins/s.total)*100)>=50?"#48bb78":"#fc8181",fontSize:11}}>WR: {Math.round((s.wins/s.total)*100)}%</div>
+            </div>
+          ))}
+          {Object.keys(ewStats).length===0&&<div style={{color:"#2d3748",fontSize:13}}>Veri yok</div>}
+        </div>
+      </div>
+
+      {/* Hatırlatıcı */}
+      <div style={{background:"#0a0d14",border:"1px solid #1e2535",borderRadius:8,padding:16}}>
+        <div style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>🔔 Günlük Hatırlatıcı</div>
+        <div style={{color:"#a0aec0",fontSize:13,marginBottom:12}}>Bugün trade günlüğü girdin mi? Tarayıcı bildirimleri aktifse her gün hatırlatıcı gelir.</div>
+        <button className="btn" onClick={()=>{
+          if("Notification" in window) {
+            Notification.requestPermission().then(p=>{
+              if(p==="granted") { new Notification("EW·ICT Platform ✅",{body:"Bildirimler aktif! Her gün trade günlüğünü doldurmayı unutma.",icon:"/icon-192.png"}); }
+            });
+          }
+        }} style={{background:"#1e2535",border:"1px solid #3182ce55",color:"#63b3ed",padding:"8px 16px",fontSize:12,borderRadius:6}}>
+          🔔 Bildirimleri Aç
+        </button>
+      </div>
+
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [tab,setTab]=useState<"journal"|"diary"|"strategy"|"market">("journal");
-  const tabs=[{id:"journal",label:"📈 Trade"},{id:"diary",label:"📒 Günlük"},{id:"strategy",label:"🧠 Strateji"},{id:"market",label:"👁️ Piyasa"}];
+  const [tab,setTab]=useState<"journal"|"diary"|"strategy"|"market"|"stats">("journal");
+  const tabs=[{id:"journal",label:"📈 Trade"},{id:"diary",label:"📒 Günlük"},{id:"strategy",label:"🧠 Strateji"},{id:"market",label:"👁️ Piyasa"},{id:"stats",label:"📊 İstatistik"}];
   return (
     <div style={{minHeight:"100vh",background:"#080b10",color:"#e2e8f0",fontFamily:"'IBM Plex Mono','Courier New',monospace"}}>
       <style>{`
@@ -500,6 +767,7 @@ export default function App() {
         {tab==="diary"&&<DiarySection/>}
         {tab==="strategy"&&<StrategySection/>}
         {tab==="market"&&<MarketObsSection/>}
+        {tab==="stats"&&<StatsSection/>}
       </div>
     </div>
   );
