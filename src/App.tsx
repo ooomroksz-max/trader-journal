@@ -60,11 +60,65 @@ function Spinner() {
 // ─── Trade Form ───────────────────────────────────────────────────────────────
 function TradeForm({form,setForm,onSave,onCancel,saveLabel}:{form:Omit<Trade,"id">;setForm:(f:Omit<Trade,"id">)=>void;onSave:()=>void;onCancel:()=>void;saveLabel:string}) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [aiAnalysis,setAiAnalysis]=useState("");
+  const [aiLoading,setAiLoading]=useState(false);
   const f = (k:string,v:any) => setForm({...form,[k]:v});
   const toggleICT = (c:string) => setForm({...form,ictConcepts:form.ictConcepts.includes(c)?form.ictConcepts.filter((x:string)=>x!==c):[...form.ictConcepts,c]});
   function handleImages(e:React.ChangeEvent<HTMLInputElement>) {
     Array.from(e.target.files||[]).forEach(file=>{ const r=new FileReader(); r.onload=ev=>setForm((p:Omit<Trade,"id">)=>({...p,images:[...p.images,ev.target?.result as string]})); r.readAsDataURL(file); });
   }
+
+  async function analyzeSetup() {
+    if(!form.pair||!form.direction){setAiAnalysis("⚠️ Lütfen en az parite ve yön girin.");return;}
+    setAiLoading(true);setAiAnalysis("");
+    const prompt=`Sen bir profesyonel trader ve Elliott Wave + ICT uzmanısın. Aşağıdaki trade setup'ını analiz et ve Türkçe olarak değerlendir:
+
+Parite: ${form.pair}
+Yön: ${form.direction}
+Timeframe: ${form.timeframe||"belirtilmedi"}
+Seans: ${form.session||"belirtilmedi"}
+Giriş: ${form.entryPrice||"belirtilmedi"}
+Stop Loss: ${form.stopLoss||"belirtilmedi"}
+Take Profit: ${form.takeProfit||"belirtilmedi"}
+Elliott Wave Pozisyonu: ${form.ewWave||"belirtilmedi"}
+ICT Konseptleri: ${form.ictConcepts.length>0?form.ictConcepts.join(", "):"belirtilmedi"}
+Trader Notu: ${form.confluences||"yok"}
+
+${form.images.length>0?"Grafik görüntüsü de eklendi — hem verileri hem grafiği birlikte değerlendir.":""}
+
+Şunları değerlendir:
+1. ✅ Setup'ın güçlü yönleri
+2. ⚠️ Eksik veya zayıf yönler
+3. 🔄 Alternatif okuma — farklı bir EW sayımı veya ICT yorumu mümkün mü?
+4. 💡 Eklenebilecek konfluence önerileri
+5. 🎯 Risk/Ödül değerlendirmesi
+6. 📊 Genel setup puanı (1-10) ve kısa gerekçe
+
+Kısa ve net ol, madde madde yaz. Alternatif senaryoyu mutlaka belirt.`;
+
+    try {
+      const messages: any[] = [];
+      if(form.images.length>0) {
+        const imageContents: any[] = form.images.slice(0,2).map((img:string)=>{
+          const base64=img.split(",")[1];
+          const mediaType=img.startsWith("data:image/png")?"image/png":"image/jpeg";
+          return {type:"image",source:{type:"base64",media_type:mediaType,data:base64}};
+        });
+        imageContents.push({type:"text",text:prompt});
+        messages.push({role:"user",content:imageContents});
+      } else {
+        messages.push({role:"user",content:prompt});
+      }
+
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages})});
+      const data=await res.json();
+      setAiAnalysis(data.content?.[0]?.text||"Analiz alınamadı.");
+    } catch(e) {
+      setAiAnalysis("❌ AI bağlantı hatası. Lütfen tekrar dene.");
+    }
+    setAiLoading(false);
+  }
+
   return (
     <div style={{display:"flex",flexDirection:"column",gap:18}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12}}>
@@ -102,6 +156,18 @@ function TradeForm({form,setForm,onSave,onCancel,saveLabel}:{form:Omit<Trade,"id
           <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleImages} style={{display:"none"}}/>
         </div>
       </div>
+      {/* AI Koç */}
+      <div style={{border:"1px solid #2d3748",borderRadius:8,overflow:"hidden"}}>
+        <button className="btn" onClick={analyzeSetup} disabled={aiLoading} style={{width:"100%",padding:"12px",background:"linear-gradient(135deg,#1a1f2e,#0f1117)",color:aiLoading?"#4a5568":"#a78bfa",fontSize:13,borderRadius:0,display:"flex",alignItems:"center",justifyContent:"center",gap:8,border:"none"}}>
+          {aiLoading?<><div style={{width:14,height:14,border:"2px solid #4a5568",borderTop:"2px solid #a78bfa",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/><span>AI analiz yapıyor...</span></>:<><span style={{fontSize:16}}>🤖</span><span>AI Koç — Setup'ımı Analiz Et</span></>}
+        </button>
+        {aiAnalysis&&(
+          <div style={{padding:16,background:"#0a0d14",borderTop:"1px solid #2d3748",fontSize:13,lineHeight:1.8,color:"#c4b5fd",whiteSpace:"pre-wrap"}}>
+            {aiAnalysis}
+          </div>
+        )}
+      </div>
+
       <div style={{display:"flex",gap:10}}>
         <button className="btn" onClick={onSave} style={{background:"#3182ce",color:"#fff",padding:"11px 24px",fontSize:14,borderRadius:8,flex:1}}>{saveLabel}</button>
         <button className="btn" onClick={onCancel} style={{background:"#1e2535",color:"#a0aec0",padding:"11px 20px",fontSize:14,borderRadius:8}}>İptal</button>
