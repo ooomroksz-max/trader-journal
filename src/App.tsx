@@ -9,7 +9,7 @@ const ICT_CONCEPTS = ["Order Block","FVG","Liquidity Sweep","MSB","BOS","OTE","N
 const SESSIONS = ["Londra","New York","Asya","Londra-NY Overlap"];
 const DIRECTIONS = ["Long","Short"];
 const OUTCOMES = ["Kâr","Zarar","Başabaş","Devam Ediyor"];
-const TIMEFRAMES = ["1D","4H","1H","15M","5M","45M","1M"];
+const TIMEFRAMES = ["1D","4H","1H","45M","15M","5M","1M"];
 const PAIRS = ["EURUSD","GBPUSD","XAUUSD","BTCUSDT","NASDAQ","SP500","Diğer"];
 
 interface Trade { id:string;date:string;pair:string;direction:string;session:string;timeframe:string;entryPrice:string;stopLoss:string;takeProfit:string;outcome:string;pnl:string;ewWave:string;ictConcepts:string[];confluences:string;lessons:string;images:string[]; }
