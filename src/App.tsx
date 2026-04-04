@@ -6,7 +6,7 @@ const USER_ID = "default_user";
 
 const EW_WAVES = ["Wave 1","Wave 2","Wave 3","Wave 4","Wave 5","Wave A","Wave B","Wave C","WXY","WXYXZ"];
 const ICT_CONCEPTS = ["Order Block","FVG","Liquidity Sweep","MSB","BOS","OTE","NWOG","NDOG","Breaker Block","Mitigation Block","Displacement","Power of 3","Judas Swing","ICT Killzone","Silver Bullet"];
-const SESSIONS = ["Londra","New York","Asya","Londra-NY Overlap"];
+const SESSIONS = ["Londra","New York","Asya","Londra-NY Overlap","Sezon DIŞI"];
 const DIRECTIONS = ["Long","Short"];
 const OUTCOMES = ["Kâr","Zarar","Başabaş","Devam Ediyor"];
 const TIMEFRAMES = ["1D","4H","1H","45M","15M","5M","1M"];
