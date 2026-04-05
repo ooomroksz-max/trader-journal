@@ -6,10 +6,10 @@ const USER_ID = "default_user";
 
 const EW_WAVES = ["Wave 1","Wave 2","Wave 3","Wave 4","Wave 5","Wave A","Wave B","Wave C","WXY","WXYXZ"];
 const ICT_CONCEPTS = ["Order Block","FVG","Liquidity Sweep","MSB","BOS","OTE","NWOG","NDOG","Breaker Block","Mitigation Block","Displacement","Power of 3","Judas Swing","ICT Killzone","Silver Bullet"];
-const SESSIONS = ["Londra","New York","Asya","Londra-NY Overlap","Sezon DIŞI"];
+const SESSIONS = ["Londra","New York","Asya","Londra-NY Overlap"];
 const DIRECTIONS = ["Long","Short"];
 const OUTCOMES = ["Kâr","Zarar","Başabaş","Devam Ediyor"];
-const TIMEFRAMES = ["1D","4H","1H","45M","15M","5M","1M"];
+const TIMEFRAMES = ["1D","4H","1H","15M","5M","1M"];
 const PAIRS = ["EURUSD","GBPUSD","XAUUSD","BTCUSDT","NASDAQ","SP500","Diğer"];
 
 interface Trade { id:string;date:string;pair:string;direction:string;session:string;timeframe:string;entryPrice:string;stopLoss:string;takeProfit:string;outcome:string;pnl:string;ewWave:string;ictConcepts:string[];confluences:string;lessons:string;images:string[]; }
@@ -938,9 +938,142 @@ function ScanSection() {
     </div>
   );
 }
+// ─── Glossary Section ─────────────────────────────────────────────────────────
+const GLOSSARY = [
+  // EW Terimleri
+  {tr:"İmpuls Dalgası",en:"Impulse Wave",pronounce:"IM-puls Weyv",cat:"EW",desc:"Trend yönünde hareket eden 5 dalgalı yapı. Piyasanın ana yönünü gösterir."},
+  {tr:"Düzeltme Dalgası",en:"Corrective Wave",pronounce:"ko-REK-tiv Weyv",cat:"EW",desc:"Trende karşı hareket eden 3 dalgalı yapı. A-B-C veya daha karmaşık şekillerde olabilir."},
+  {tr:"Uzama",en:"Extension",pronounce:"eks-TEN-şın",cat:"EW",desc:"Bir impuls dalgasının olağandışı uzunluğa ulaşması. Genellikle Wave 3'te görülür."},
+  {tr:"Kırpma / Başarısızlık",en:"Truncation / Failure",pronounce:"tran-KEY-şın",cat:"EW",desc:"Wave 5'in Wave 3 zirvesini geçememesi. Çok güçlü ters hareket sinyali."},
+  {tr:"Sonlanma Diyagonali",en:"Ending Diagonal",pronounce:"EN-ding day-AG-onal",cat:"EW",desc:"Wave 5 veya C'nin sonunda görülen kama (wedge) yapısı. Tükenme sinyali."},
+  {tr:"Öncü Diyagonal",en:"Leading Diagonal",pronounce:"LEE-ding day-AG-onal",cat:"EW",desc:"Wave 1 veya A'nın başında görülen kama yapısı. Yeni trendin başladığını gösterir."},
+  {tr:"Zigzag",en:"Zigzag",pronounce:"ZİG-zag",cat:"EW",desc:"A-B-C düzeltme yapısı. A ve C 5 dalgalı, B 3 dalgalı. En keskin düzeltme tipi."},
+  {tr:"Düz Düzeltme",en:"Flat",pronounce:"Flat",cat:"EW",desc:"A-B-C düzeltme yapısı. Her dalga 3'lü. B dalgası başlangıç noktasına yakın döner."},
+  {tr:"Genişleyen Düz",en:"Expanded Flat",pronounce:"eks-PAN-ded Flat",cat:"EW",desc:"B dalgasının A başlangıcını geçtiği flat türü. En sık görülen düzeltme yapısı."},
+  {tr:"Üçgen",en:"Triangle",pronounce:"TRAY-ang-ıl",cat:"EW",desc:"5 dalgalı (A-B-C-D-E) daralma yapısı. Sadece Wave 4 veya B'de görülür."},
+  {tr:"Çift Üç",en:"Double Three (WXY)",pronounce:"DAB-ıl Thri",cat:"EW",desc:"İki düzeltme yapısının X bağlayıcı dalga ile birleşmesi. Yan piyasalarda sık görülür."},
+  {tr:"Alternasyon",en:"Alternation",pronounce:"ol-tır-NEY-şın",cat:"EW",desc:"Wave 2 ve Wave 4'ün farklı yapıda olması kuralı. Biri keskinse diğeri yatay olur."},
+  {tr:"Fraktal",en:"Fractal",pronounce:"FRAK-tıl",cat:"EW",desc:"Her dalganın kendi içinde daha küçük dalgalar barındırması. EW'nin temel özelliği."},
+  {tr:"Derece",en:"Degree",pronounce:"di-GRİ",cat:"EW",desc:"Dalgaların büyüklük hiyerarşisi. Grand Supercycle'dan Minuette'e kadar uzanır."},
+  {tr:"Kanal",en:"Channel",pronounce:"ÇENEL",cat:"EW",desc:"Dalgaları sınırlayan paralel trend çizgileri. Wave 5 hedefi için kullanılır."},
+  {tr:"Fırlatma",en:"Thrust",pronounce:"Thrast",cat:"EW",desc:"Üçgen sonrası güçlü tek yönlü hareket. Triangle'ın en geniş noktası kadar devam eder."},
+  // ICT Terimleri
+  {tr:"Emir Bloğu",en:"Order Block",pronounce:"OR-dır Blok",cat:"ICT",desc:"Smart Money'nin büyük emir bıraktığı son zıt renkli mum. Güçlü destek/direnç bölgesi."},
+  {tr:"Adil Değer Boşluğu",en:"Fair Value Gap (FVG)",pronounce:"Feyr Vel-yu Gap",cat:"ICT",desc:"3 mum arasında oluşan dengesizlik boşluğu. Fiyat doldurmaya eğilimlidir."},
+  {tr:"Likidite",en:"Liquidity",pronounce:"li-KWID-i-ti",cat:"ICT",desc:"Stop emirlerinin biriktiği bölge. Smart Money bu stop'ları avlar."},
+  {tr:"Likidite Süpürmesi",en:"Liquidity Sweep",pronounce:"li-KWID-i-ti Swip",cat:"ICT",desc:"Fiyatın stop bölgesini kısa süre geçip geri dönmesi. Manipülasyon sinyali."},
+  {tr:"Piyasa Yapı Kırılması",en:"Market Structure Break (MSB)",pronounce:"MAR-kit STRAK-çır Breyk",cat:"ICT",desc:"Trendin değiştiğini gösteren ani ve güçlü yapı kırılması."},
+  {tr:"Yapı Kırılması",en:"Break of Structure (BOS)",pronounce:"Breyk ov STRAK-çır",cat:"ICT",desc:"Trendin devam ettiğini gösteren beklenen yapı kırılması."},
+  {tr:"Optimum Giriş Noktası",en:"Optimal Trade Entry (OTE)",pronounce:"op-TİM-ım Treyd EN-tri",cat:"ICT",desc:"Fibonacci %61.8-%78.6 arasındaki en iyi giriş bölgesi. Smart Money buradan girer."},
+  {tr:"Yerinden Etme",en:"Displacement",pronounce:"dis-PLEYS-ment",cat:"ICT",desc:"Fiyatın tek yönde güçlü ve hızlı hareketi. Smart Money'nin piyasaya girdiğinin işareti."},
+  {tr:"Kırıcı Blok",en:"Breaker Block",pronounce:"BREY-kır Blok",cat:"ICT",desc:"Kırılan Order Block'un zıt yönde destek/direnç görevi üstlenmesi."},
+  {tr:"Azaltma Bloğu",en:"Mitigation Block",pronounce:"mit-i-GEY-şın Blok",cat:"ICT",desc:"Fiyatın geri dönerek test ettiği Order Block bölgesi."},
+  {tr:"Üçün Gücü",en:"Power of 3",pronounce:"PAW-ır ov Thri",cat:"ICT",desc:"Accumulation → Manipulation → Distribution. Günlük fiyat hareketinin 3 aşaması."},
+  {tr:"Yuda Salınımı",en:"Judas Swing",pronounce:"CU-das Swing",cat:"ICT",desc:"Seans açılışında yanlış yönde fiyat hareketi. Trader'ları tuzağa düşürür."},
+  {tr:"ICT Öldürme Bölgesi",en:"ICT Killzone",pronounce:"ICT KİL-zon",cat:"ICT",desc:"En yüksek likiditenin olduğu seans saatleri. Londra: 02-05, NY: 08-11 EST."},
+  {tr:"Gümüş Kurşun",en:"Silver Bullet",pronounce:"SİL-vır BUL-it",cat:"ICT",desc:"Belirli saat aralıklarında oluşan yüksek olasılıklı ICT setup'ı."},
+  {tr:"Yeni Haftalık Açılış Boşluğu",en:"New Week Opening Gap (NWOG)",pronounce:"Nu Wik O-pın-ing Gap",cat:"ICT",desc:"Hafta başında oluşan fiyat boşluğu. Güçlü mıknatıs etkisi yapar."},
+  {tr:"Yeni Günlük Açılış Boşluğu",en:"New Day Opening Gap (NDOG)",pronounce:"Nu Dey O-pın-ing Gap",cat:"ICT",desc:"Gün başında oluşan fiyat boşluğu. Kısa vadeli hedef olarak kullanılır."},
+  {tr:"Akıllı Para",en:"Smart Money",pronounce:"Smart MAN-i",cat:"ICT",desc:"Büyük kurumsal yatırımcılar. Bankaların ve hedge fonların piyasayı yönlendirmesi."},
+  {tr:"Perakende Trader",en:"Retail Trader",pronounce:"Ri-TEYL TREY-dır",cat:"ICT",desc:"Bireysel yatırımcı. ICT'ye göre Smart Money tarafından tuzağa düşürülen taraf."},
+  // Genel Trading
+  {tr:"Yayılma",en:"Spread",pronounce:"Spred",cat:"Genel",desc:"Alış ve satış fiyatı arasındaki fark. Broker'ın komisyonu."},
+  {tr:"Kayma",en:"Slippage",pronounce:"SLİP-ij",cat:"Genel",desc:"Beklenen ve gerçekleşen giriş fiyatı arasındaki fark."},
+  {tr:"Teminat",en:"Margin",pronounce:"MAR-jin",cat:"Genel",desc:"Pozisyon açmak için gerekli minimum depozito."},
+  {tr:"Kaldıraç",en:"Leverage",pronounce:"LEV-ırıj",cat:"Genel",desc:"Az sermaye ile büyük pozisyon açma imkanı. Risk de artar!"},
+  {tr:"Pip",en:"Pip",pronounce:"Pip",cat:"Genel",desc:"Forex'te fiyat değişiminin en küçük birimi. EURUSD'de 0.0001."},
+  {tr:"Lot",en:"Lot",pronounce:"Lot",cat:"Genel",desc:"İşlem birimi. Standart lot = 100.000 birim."},
+  {tr:"Zarar Kes",en:"Stop Loss",pronounce:"Stop Los",cat:"Genel",desc:"Belirlenen fiyata ulaşınca pozisyonu kapatan otomatik emir."},
+  {tr:"Kâr Al",en:"Take Profit",pronounce:"Teyk Prof-it",cat:"Genel",desc:"Hedef fiyata ulaşınca pozisyonu kapatan otomatik emir."},
+  {tr:"Risk/Ödül Oranı",en:"Risk/Reward Ratio (R:R)",pronounce:"Risk/Ri-WORD REY-şio",cat:"Genel",desc:"Riske edilen miktara karşılık kazanılabilecek miktar. 1:3 = 1 birim risk, 3 birim kazanç."},
+  {tr:"Yükselen Trend",en:"Uptrend / Bullish",pronounce:"AP-trend / BUL-iş",cat:"Genel",desc:"Fiyatın genel olarak yukarı hareket etmesi. Her yeni zirve bir öncekinden yüksek."},
+  {tr:"Düşen Trend",en:"Downtrend / Bearish",pronounce:"DOWN-trend / BEYR-iş",cat:"Genel",desc:"Fiyatın genel olarak aşağı hareket etmesi. Her yeni dip bir öncekinden düşük."},
+  {tr:"Konsolidasyon",en:"Consolidation",pronounce:"kon-sol-i-DEY-şın",cat:"Genel",desc:"Fiyatın yatay sıkışması. Ne alıcı ne satıcı baskın. Büyük hareket öncesi sık görülür."},
+  {tr:"Destek",en:"Support",pronounce:"sı-PORT",cat:"Genel",desc:"Fiyatın düşüşte durduğu seviye. Alıcıların yoğunlaştığı bölge."},
+  {tr:"Direnç",en:"Resistance",pronounce:"ri-ZİS-tıns",cat:"Genel",desc:"Fiyatın yükselişte durduğu seviye. Satıcıların yoğunlaştığı bölge."},
+  {tr:"Fibonacci Geri Çekilmesi",en:"Fibonacci Retracement",pronounce:"fib-o-NAÇ-i Ri-TREYS-ment",cat:"Genel",desc:"Trendin ne kadar geri çekileceğini tahmin etmek için kullanılan oran seviyeleri."},
+  {tr:"Diverjans",en:"Divergence",pronounce:"di-VER-jıns",cat:"Genel",desc:"Fiyat ile indikatörün zıt yönde hareket etmesi. Trend değişimi sinyali."},
+  {tr:"Hacim",en:"Volume",pronounce:"VOL-yum",cat:"Genel",desc:"Belirli sürede gerçekleşen işlem miktarı. Hareketin gücünü gösterir."},
+  {tr:"Boğa Tuzağı",en:"Bull Trap",pronounce:"Bul Trap",cat:"Genel",desc:"Fiyatın direnç kırıyor gibi yapıp geri düşmesi. Alıcıları tuzağa düşürür."},
+  {tr:"Ayı Tuzağı",en:"Bear Trap",pronounce:"Beyr Trap",cat:"Genel",desc:"Fiyatın destek kırıyor gibi yapıp geri yükselmesi. Satıcıları tuzağa düşürür."},
+  {tr:"Geri Test",en:"Retest",pronounce:"Ri-TEST",cat:"Genel",desc:"Kırılan seviyenin tekrar test edilmesi. Destek → Direnç veya Direnç → Destek dönüşümü."},
+  {tr:"Momentim",en:"Momentum",pronounce:"mo-MEN-tım",cat:"Genel",desc:"Fiyat hareketinin hızı ve gücü. Displacement sırasında çok yüksek olur."},
+  {tr:"Piramit Yapma",en:"Pyramiding",pronounce:"PİR-ı-mid-ing",cat:"Genel",desc:"Kârlı pozisyona ek pozisyon açma stratejisi. Wave 3 içinde sık kullanılır."},
+  {tr:"Ölçekleme",en:"Scaling In/Out",pronounce:"SKEYLING İn/Awt",cat:"Genel",desc:"Pozisyona kademeli giriş veya çıkış yapma."},
+  {tr:"Yeniden Test",en:"Pullback",pronounce:"PUL-bak",cat:"Genel",desc:"Trendin kısa süre karşı yönde hareketi. Wave 2 ve Wave 4 birer pullback'tir."},
+];
+
+function GlossarySection() {
+  const [search,setSearch]=useState("");
+  const [cat,setCat]=useState("Tümü");
+  const [selected,setSelected]=useState<typeof GLOSSARY[0]|null>(null);
+  const [lang,setLang]=useState<"tr"|"en">("tr");
+  const CATS=["Tümü","EW","ICT","Genel"];
+  const catColor:Record<string,string>={"EW":"#b794f4","ICT":"#63b3ed","Genel":"#48bb78"};
+
+  const filtered=GLOSSARY.filter(g=>{
+    const matchCat=cat==="Tümü"||g.cat===cat;
+    const q=search.toLowerCase();
+    const matchSearch=!q||g.tr.toLowerCase().includes(q)||g.en.toLowerCase().includes(q)||g.desc.toLowerCase().includes(q);
+    return matchCat&&matchSearch;
+  });
+
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
+        <span style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1.5}}>📖 Trading Sözlüğü</span>
+        <div style={{display:"flex",gap:6}}>
+          <button className="btn" onClick={()=>setLang("tr")} style={{padding:"4px 12px",fontSize:11,background:lang==="tr"?"#1e2535":"transparent",border:`1px solid ${lang==="tr"?"#3182ce":"#1e2535"}`,color:lang==="tr"?"#63b3ed":"#4a5568"}}>🇹🇷 TR → EN</button>
+          <button className="btn" onClick={()=>setLang("en")} style={{padding:"4px 12px",fontSize:11,background:lang==="en"?"#1e2535":"transparent",border:`1px solid ${lang==="en"?"#3182ce":"#1e2535"}`,color:lang==="en"?"#63b3ed":"#4a5568"}}>🇬🇧 EN → TR</button>
+        </div>
+      </div>
+
+      <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
+        <input placeholder="🔍 Türkçe veya İngilizce ara..." value={search} onChange={e=>setSearch(e.target.value)} style={{flex:1,minWidth:200}}/>
+        {CATS.map(c=><button key={c} className="btn" onClick={()=>setCat(c)} style={{padding:"5px 12px",fontSize:11,background:cat===c?"#1e2535":"transparent",border:`1px solid ${cat===c?"#3182ce":"#1e2535"}`,color:cat===c?"#63b3ed":"#4a5568"}}>{c}</button>)}
+      </div>
+
+      <div style={{color:"#4a5568",fontSize:11,marginBottom:12}}>{filtered.length} terim</div>
+
+      {selected&&(
+        <div style={{background:"#0a0d14",border:"1px solid #3182ce55",borderRadius:8,padding:16,marginBottom:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+            <div>
+              <div style={{fontWeight:700,fontSize:20,color:"#e2e8f0"}}>{lang==="tr"?selected.tr:selected.en}</div>
+              <div style={{color:"#718096",fontSize:14,marginTop:2}}>{lang==="tr"?selected.en:selected.tr}</div>
+              <div style={{color:"#4a5568",fontSize:12,marginTop:4,fontStyle:"italic"}}>🔊 {selected.pronounce}</div>
+            </div>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <Tag label={selected.cat} color={catColor[selected.cat]||"#718096"}/>
+              <button className="btn" onClick={()=>setSelected(null)} style={{background:"transparent",border:"1px solid #1e2535",color:"#4a5568",padding:"4px 8px",fontSize:11}}>✕</button>
+            </div>
+          </div>
+          <div style={{background:"#0f1117",borderRadius:6,padding:12,fontSize:13,lineHeight:1.7,color:"#a0aec0"}}>{selected.desc}</div>
+        </div>
+      )}
+
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {filtered.map((g,i)=>(
+          <div key={i} onClick={()=>setSelected(selected?.tr===g.tr?null:g)} style={{background:selected?.tr===g.tr?"#0f1a2e":"#0a0d14",border:`1px solid ${selected?.tr===g.tr?"#3182ce55":"#1e2535"}`,borderRadius:8,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                <span style={{fontWeight:600,fontSize:14,color:"#e2e8f0"}}>{lang==="tr"?g.tr:g.en}</span>
+                <span style={{color:"#4a5568",fontSize:12}}>→</span>
+                <span style={{color:"#63b3ed",fontSize:13}}>{lang==="tr"?g.en:g.tr}</span>
+              </div>
+              <div style={{color:"#4a5568",fontSize:11,marginTop:3,fontStyle:"italic"}}>🔊 {g.pronounce}</div>
+            </div>
+            <Tag label={g.cat} color={catColor[g.cat]||"#718096"}/>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
-  const [tab,setTab]=useState<"journal"|"diary"|"strategy"|"market"|"stats"|"scan"|"lessons">("journal");
-  const tabs=[{id:"journal",label:"📈 Trade"},{id:"diary",label:"📒 Günlük"},{id:"lessons",label:"📚 Ders Defteri"},{id:"strategy",label:"🧠 Strateji"},{id:"market",label:"👁️ Piyasa"},{id:"stats",label:"📊 İstatistik"},{id:"scan",label:"📡 Tarama"}];
+  const [tab,setTab]=useState<"journal"|"diary"|"strategy"|"market"|"stats"|"scan"|"lessons"|"glossary">("journal");
+  const tabs=[{id:"journal",label:"📈 Trade"},{id:"diary",label:"📒 Günlük"},{id:"lessons",label:"📚 Ders"},{id:"glossary",label:"📖 Sözlük"},{id:"strategy",label:"🧠 Strateji"},{id:"market",label:"👁️ Piyasa"},{id:"stats",label:"📊 İstatistik"},{id:"scan",label:"📡 Tarama"}];
   return (
     <div style={{minHeight:"100vh",background:"#080b10",color:"#e2e8f0",fontFamily:"'IBM Plex Mono','Courier New',monospace"}}>
       <style>{`
@@ -974,6 +1107,7 @@ export default function App() {
         {tab==="journal"&&<TradeJournalSection/>}
         {tab==="diary"&&<DiarySection/>}
         {tab==="lessons"&&<LessonNotesSection/>}
+        {tab==="glossary"&&<GlossarySection/>}
         {tab==="strategy"&&<StrategySection/>}
         {tab==="market"&&<MarketObsSection/>}
         {tab==="stats"&&<StatsSection/>}
