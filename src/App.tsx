@@ -1071,9 +1071,198 @@ function GlossarySection() {
   );
 }
 
+// ─── English Learning Section ─────────────────────────────────────────────────
+const DAILY_WORDS = [
+  // Genel A1-A2 + Trading
+  {date:"Mon", general:{en:"Patience",tr:"Sabır",pronounce:"PEY-şıns",example:"Patience is the key to successful trading.",exampleTr:"Sabır, başarılı trading'in anahtarıdır."},trading:{en:"Trend",tr:"Trend / Yön",pronounce:"Trend",example:"The trend is your friend in trading.",exampleTr:"Trading'de trend senin arkadaşındır."}},
+  {date:"Tue", general:{en:"Discipline",tr:"Disiplin",pronounce:"DİS-i-plin",example:"You need discipline to follow your trading plan.",exampleTr:"İşlem planını takip etmek için disipline ihtiyacın var."},trading:{en:"Risk Management",tr:"Risk Yönetimi",pronounce:"Risk MEN-ij-mənt",example:"Good risk management protects your account.",exampleTr:"İyi risk yönetimi hesabını korur."}},
+  {date:"Wed", general:{en:"Opportunity",tr:"Fırsat",pronounce:"op-ör-CU-ni-ti",example:"Wait for the right opportunity before entering.",exampleTr:"Girmeden önce doğru fırsatı bekle."},trading:{en:"Entry Point",tr:"Giriş Noktası",pronounce:"EN-tri Poynt",example:"The entry point must be confirmed by multiple signals.",exampleTr:"Giriş noktası birden fazla sinyal tarafından onaylanmalıdır."}},
+  {date:"Thu", general:{en:"Confidence",tr:"Güven",pronounce:"KON-fi-döns",example:"Confidence comes from having a solid strategy.",exampleTr:"Güven, sağlam bir stratejiye sahip olmaktan gelir."},trading:{en:"Stop Loss",tr:"Zarar Kes",pronounce:"Stop Los",example:"Always set a stop loss before entering a trade.",exampleTr:"Trade'e girmeden önce her zaman stop loss belirle."}},
+  {date:"Fri", general:{en:"Strategy",tr:"Strateji",pronounce:"STRAT-i-ci",example:"A good strategy gives consistent results.",exampleTr:"İyi bir strateji tutarlı sonuçlar verir."},trading:{en:"Take Profit",tr:"Kâr Al",pronounce:"Teyk Prof-it",example:"Set your take profit at a key resistance level.",exampleTr:"Kâr al seviyeni önemli bir direnç noktasına koy."}},
+  {date:"Sat", general:{en:"Analysis",tr:"Analiz",pronounce:"ə-NAL-i-sis",example:"Technical analysis helps predict price movements.",exampleTr:"Teknik analiz fiyat hareketlerini tahmin etmeye yardımcı olur."},trading:{en:"Breakout",tr:"Kırılma",pronounce:"BREYK-awt",example:"Wait for a confirmed breakout before entering.",exampleTr:"Girmeden önce onaylanmış bir kırılma bekle."}},
+  {date:"Sun", general:{en:"Consistency",tr:"Tutarlılık",pronounce:"kön-SİS-tön-si",example:"Consistency in trading leads to long-term success.",exampleTr:"Trading'de tutarlılık uzun vadeli başarıya yol açar."},trading:{en:"Position Size",tr:"Pozisyon Büyüklüğü",pronounce:"pö-ZİŞ-ön Sayz",example:"Never risk more than 1-2% per trade on position size.",exampleTr:"Pozisyon büyüklüğünde trade başına %1-2'den fazla riske etme."}},
+];
+
+const WORD_BANK = [
+  {en:"Market",tr:"Piyasa",pronounce:"MAR-kıt",sentences:["The market is very volatile today.","Piyasa bugün çok oynak."]},
+  {en:"Profit",tr:"Kâr",pronounce:"PROF-it",sentences:["I made a profit on this trade.","Bu trade'de kâr ettim."]},
+  {en:"Loss",tr:"Zarar",pronounce:"Los",sentences:["Cut your losses quickly.","Zararlarını hızla kes."]},
+  {en:"Signal",tr:"Sinyal",pronounce:"SİG-nıl",sentences:["Wait for a clear signal before entering.","Girmeden önce net bir sinyal bekle."]},
+  {en:"Candle",tr:"Mum",pronounce:"KEN-dıl",sentences:["This bullish candle confirms the trend.","Bu boğa mumu trendi onaylıyor."]},
+  {en:"Bearish",tr:"Düşüş yönlü",pronounce:"BEYR-iş",sentences:["The market looks bearish today.","Piyasa bugün düşüş yönlü görünüyor."]},
+  {en:"Bullish",tr:"Yükseliş yönlü",pronounce:"BUL-iş",sentences:["We have a bullish setup forming.","Boğa setup'ı oluşuyor."]},
+  {en:"Confirm",tr:"Onaylamak",pronounce:"kön-FÖRM",sentences:["Confirm the setup before entering.","Girmeden önce setup'ı onayla."]},
+  {en:"Pattern",tr:"Formasyon / Desen",pronounce:"PET-örn",sentences:["I see a clear pattern on this chart.","Bu grafikte net bir formasyon görüyorum."]},
+  {en:"Target",tr:"Hedef",pronounce:"TAR-git",sentences:["My target is the previous high.","Hedefim önceki yüksek."]},
+  {en:"Rejection",tr:"Reddedilme / Geri Dönüş",pronounce:"ri-CYEK-şın",sentences:["There is a strong rejection at this level.","Bu seviyede güçlü bir reddedilme var."]},
+  {en:"Accumulation",tr:"Birikim",pronounce:"ö-kyu-myu-LEY-şın",sentences:["Smart money is in accumulation phase.","Akıllı para birikim aşamasında."]},
+  {en:"Distribution",tr:"Dağıtım",pronounce:"dis-tri-BYU-şın",sentences:["We are in the distribution zone now.","Şu an dağıtım bölgesindeyiz."]},
+  {en:"Manipulation",tr:"Manipülasyon",pronounce:"mö-nip-yu-LEY-şın",sentences:["This is a clear manipulation before the real move.","Gerçek hareket öncesi net bir manipülasyon bu."]},
+  {en:"Confluence",tr:"Konfluence / Birleşim",pronounce:"KON-flu-öns",sentences:["Multiple confluences increase the probability.","Birden fazla konfluence olasılığı artırır."]},
+  {en:"Invalidate",tr:"Geçersiz kılmak",pronounce:"in-VAL-i-deyt",sentences:["A break below this level would invalidate my setup.","Bu seviyenin altına kırılma setup'ımı geçersiz kılar."]},
+  {en:"Anticipate",tr:"Öngörmek / Beklemek",pronounce:"an-TİS-i-peyt",sentences:["I anticipate a pullback before the next move up.","Sonraki yukarı hareketten önce bir geri çekilme öngörüyorum."]},
+  {en:"Execute",tr:"Uygulamak / Gerçekleştirmek",pronounce:"EK-si-kyut",sentences:["Execute the trade only when all conditions are met.","Tüm koşullar sağlandığında trade'i gerçekleştir."]},
+  {en:"Hesitate",tr:"Tereddüt etmek",pronounce:"HEZ-i-teyt",sentences:["Don't hesitate when your setup appears.","Setup'ın göründüğünde tereddüt etme."]},
+  {en:"Aggressive",tr:"Agresif",pronounce:"ö-GRES-iv",sentences:["Don't be too aggressive with your position size.","Pozisyon büyüklüğünde çok agresif olma."]},
+];
+
+function EnglishSection() {
+  const today = new Date().getDay(); // 0=Sun, 1=Mon...
+  const dayIndex = today === 0 ? 6 : today - 1;
+  const todayWord = DAILY_WORDS[dayIndex];
+  const [learned, setLearned] = useState<string[]>([]);
+  const [streak, setStreak] = useState(0);
+  const [wordIndex, setWordIndex] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [tab, setTab] = useState<"daily"|"bank">("daily");
+
+  useEffect(() => {
+    const s = localStorage.getItem("eng_learned");
+    const str = localStorage.getItem("eng_streak");
+    if(s) setLearned(JSON.parse(s));
+    if(str) setStreak(parseInt(str));
+  }, []);
+
+  function markLearned(word: string) {
+    const today = new Date().toISOString().slice(0,10);
+    const key = `${word}_${today}`;
+    if(learned.includes(key)) return;
+    const updated = [...learned, key];
+    setLearned(updated);
+    localStorage.setItem("eng_learned", JSON.stringify(updated));
+    const newStreak = streak + 1;
+    setStreak(newStreak);
+    localStorage.setItem("eng_streak", newStreak.toString());
+  }
+
+  const todayKey = new Date().toISOString().slice(0,10);
+  const generalLearned = learned.includes(`${todayWord.general.en}_${todayKey}`);
+  const tradingLearned = learned.includes(`${todayWord.trading.en}_${todayKey}`);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:20}}>
+
+      {/* Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+        <span style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1.5}}>🇬🇧 İngilizce Öğren</span>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <span style={{color:"#f6ad55",fontSize:13}}>🔥 {streak} gün</span>
+          <div style={{display:"flex",gap:6}}>
+            <button className="btn" onClick={()=>setTab("daily")} style={{padding:"5px 12px",fontSize:11,background:tab==="daily"?"#1e2535":"transparent",border:`1px solid ${tab==="daily"?"#3182ce":"#1e2535"}`,color:tab==="daily"?"#63b3ed":"#4a5568"}}>Günlük</button>
+            <button className="btn" onClick={()=>setTab("bank")} style={{padding:"5px 12px",fontSize:11,background:tab==="bank"?"#1e2535":"transparent",border:`1px solid ${tab==="bank"?"#3182ce":"#1e2535"}`,color:tab==="bank"?"#63b3ed":"#4a5568"}}>Kelime Bankası</button>
+          </div>
+        </div>
+      </div>
+
+      {tab==="daily" && <>
+        {/* Günün Tarihi */}
+        <div style={{background:"linear-gradient(135deg,#0f1a2e,#0a0d14)",border:"1px solid #1e2535",borderRadius:8,padding:14,textAlign:"center"}}>
+          <div style={{color:"#4a5568",fontSize:11,textTransform:"uppercase",letterSpacing:1}}>Bugün — {new Date().toLocaleDateString("tr-TR",{weekday:"long",day:"numeric",month:"long"})}</div>
+          <div style={{color:"#718096",fontSize:12,marginTop:4}}>Bugün 2 kelime öğreneceksin 💪</div>
+        </div>
+
+        {/* Genel Kelime */}
+        <div style={{background:"#0a0d14",border:`1px solid ${generalLearned?"#48bb7855":"#1e2535"}`,borderRadius:8,padding:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <span style={{color:"#48bb78",fontSize:11,textTransform:"uppercase",letterSpacing:1}}>🌍 Genel İngilizce</span>
+            {generalLearned && <span style={{color:"#48bb78",fontSize:12}}>✅ Öğrenildi!</span>}
+          </div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:28,fontWeight:700,color:"#e2e8f0"}}>{todayWord.general.en}</div>
+            <div style={{color:"#63b3ed",fontSize:16,marginTop:4}}>{todayWord.general.tr}</div>
+            <div style={{color:"#4a5568",fontSize:12,marginTop:4,fontStyle:"italic"}}>🔊 {todayWord.general.pronounce}</div>
+          </div>
+          <div style={{background:"#0f1117",borderRadius:6,padding:12,marginBottom:12}}>
+            <div style={{color:"#e2e8f0",fontSize:13,marginBottom:4}}>"{todayWord.general.example}"</div>
+            <div style={{color:"#4a5568",fontSize:12}}>"{todayWord.general.exampleTr}"</div>
+          </div>
+          {!generalLearned && (
+            <button className="btn" onClick={()=>markLearned(todayWord.general.en)} style={{background:"#48bb7822",border:"1px solid #48bb7855",color:"#48bb78",padding:"8px 16px",width:"100%",borderRadius:6}}>
+              ✅ Öğrendim!
+            </button>
+          )}
+        </div>
+
+        {/* Trading Kelime */}
+        <div style={{background:"#0a0d14",border:`1px solid ${tradingLearned?"#48bb7855":"#1e2535"}`,borderRadius:8,padding:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <span style={{color:"#f6ad55",fontSize:11,textTransform:"uppercase",letterSpacing:1}}>📈 Trading İngilizcesi</span>
+            {tradingLearned && <span style={{color:"#48bb78",fontSize:12}}>✅ Öğrenildi!</span>}
+          </div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:28,fontWeight:700,color:"#e2e8f0"}}>{todayWord.trading.en}</div>
+            <div style={{color:"#63b3ed",fontSize:16,marginTop:4}}>{todayWord.trading.tr}</div>
+            <div style={{color:"#4a5568",fontSize:12,marginTop:4,fontStyle:"italic"}}>🔊 {todayWord.trading.pronounce}</div>
+          </div>
+          <div style={{background:"#0f1117",borderRadius:6,padding:12,marginBottom:12}}>
+            <div style={{color:"#e2e8f0",fontSize:13,marginBottom:4}}>"{todayWord.trading.example}"</div>
+            <div style={{color:"#4a5568",fontSize:12}}>"{todayWord.trading.exampleTr}"</div>
+          </div>
+          {!tradingLearned && (
+            <button className="btn" onClick={()=>markLearned(todayWord.trading.en)} style={{background:"#f6ad5522",border:"1px solid #f6ad5555",color:"#f6ad55",padding:"8px 16px",width:"100%",borderRadius:6}}>
+              ✅ Öğrendim!
+            </button>
+          )}
+        </div>
+
+        {/* İpucu */}
+        <div style={{background:"#0a0d14",border:"1px solid #1e2535",borderRadius:8,padding:14}}>
+          <div style={{color:"#718096",fontSize:11,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>💡 Günün İpucu</div>
+          <div style={{color:"#a0aec0",fontSize:13,lineHeight:1.7}}>
+            Yeni kelimeyi öğrenmenin en iyi yolu onu bir cümlede kullanmak. Bugünkü kelimeleri kendi trade günlüğüne yazarken kullanmayı dene! 📝
+          </div>
+        </div>
+      </>}
+
+      {tab==="bank" && <>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{color:"#4a5568",fontSize:12}}>{WORD_BANK.length} kelime</span>
+          <div style={{display:"flex",gap:8}}>
+            <button className="btn" onClick={()=>{setWordIndex(Math.floor(Math.random()*WORD_BANK.length));setShowAnswer(false);}} style={{background:"#1e2535",color:"#a0aec0",padding:"5px 12px",fontSize:12}}>🎲 Rastgele</button>
+          </div>
+        </div>
+
+        {/* Flashcard */}
+        <div onClick={()=>setShowAnswer(!showAnswer)} style={{background:"#0a0d14",border:"1px solid #3182ce55",borderRadius:12,padding:24,textAlign:"center",cursor:"pointer",minHeight:160,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8}}>
+          {!showAnswer ? (
+            <>
+              <div style={{fontSize:32,fontWeight:700,color:"#e2e8f0"}}>{WORD_BANK[wordIndex].en}</div>
+              <div style={{color:"#4a5568",fontSize:12,fontStyle:"italic"}}>🔊 {WORD_BANK[wordIndex].pronounce}</div>
+              <div style={{color:"#2d3748",fontSize:12,marginTop:8}}>Türkçesini biliyor musun? Tıkla →</div>
+            </>
+          ) : (
+            <>
+              <div style={{fontSize:24,fontWeight:700,color:"#63b3ed"}}>{WORD_BANK[wordIndex].tr}</div>
+              <div style={{color:"#4a5568",fontSize:11,marginTop:8,fontStyle:"italic"}}>"{WORD_BANK[wordIndex].sentences[0]}"</div>
+              <div style={{color:"#2d3748",fontSize:11}}>"{WORD_BANK[wordIndex].sentences[1]}"</div>
+            </>
+          )}
+        </div>
+
+        <div style={{display:"flex",gap:8}}>
+          <button className="btn" onClick={()=>{setWordIndex(i=>i>0?i-1:WORD_BANK.length-1);setShowAnswer(false);}} style={{flex:1,background:"#1e2535",color:"#a0aec0",padding:"10px",borderRadius:8}}>← Önceki</button>
+          <button className="btn" onClick={()=>{setWordIndex(i=>(i+1)%WORD_BANK.length);setShowAnswer(false);}} style={{flex:1,background:"#3182ce",color:"#fff",padding:"10px",borderRadius:8}}>Sonraki →</button>
+        </div>
+
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {WORD_BANK.map((w,i)=>(
+            <div key={i} onClick={()=>{setWordIndex(i);setShowAnswer(false);setTab("bank");}} style={{background:wordIndex===i?"#0f1a2e":"#0a0d14",border:`1px solid ${wordIndex===i?"#3182ce55":"#1e2535"}`,borderRadius:6,padding:"10px 14px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <span style={{fontWeight:600,fontSize:13,color:"#e2e8f0"}}>{w.en}</span>
+                <span style={{color:"#4a5568",fontSize:12,marginLeft:8}}>→ {w.tr}</span>
+              </div>
+              <span style={{color:"#4a5568",fontSize:11,fontStyle:"italic"}}>{w.pronounce}</span>
+            </div>
+          ))}
+        </div>
+      </>}
+    </div>
+  );
+}
+
 export default function App() {
-  const [tab,setTab]=useState<"journal"|"diary"|"strategy"|"market"|"stats"|"scan"|"lessons"|"glossary">("journal");
-  const tabs=[{id:"journal",label:"📈 Trade"},{id:"diary",label:"📒 Günlük"},{id:"lessons",label:"📚 Ders"},{id:"glossary",label:"📖 Sözlük"},{id:"strategy",label:"🧠 Strateji"},{id:"market",label:"👁️ Piyasa"},{id:"stats",label:"📊 İstatistik"},{id:"scan",label:"📡 Tarama"}];
+  const [tab,setTab]=useState<"journal"|"diary"|"strategy"|"market"|"stats"|"scan"|"lessons"|"glossary"|"english">("journal");
+  const tabs=[{id:"journal",label:"📈 Trade"},{id:"diary",label:"📒 Günlük"},{id:"lessons",label:"📚 Ders"},{id:"glossary",label:"📖 Sözlük"},{id:"english",label:"🇬🇧 İngilizce"},{id:"strategy",label:"🧠 Strateji"},{id:"market",label:"👁️ Piyasa"},{id:"stats",label:"📊 İstatistik"},{id:"scan",label:"📡 Tarama"}];
   return (
     <div style={{minHeight:"100vh",background:"#080b10",color:"#e2e8f0",fontFamily:"'IBM Plex Mono','Courier New',monospace"}}>
       <style>{`
@@ -1108,6 +1297,7 @@ export default function App() {
         {tab==="diary"&&<DiarySection/>}
         {tab==="lessons"&&<LessonNotesSection/>}
         {tab==="glossary"&&<GlossarySection/>}
+        {tab==="english"&&<EnglishSection/>}
         {tab==="strategy"&&<StrategySection/>}
         {tab==="market"&&<MarketObsSection/>}
         {tab==="stats"&&<StatsSection/>}
